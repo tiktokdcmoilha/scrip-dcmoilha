@@ -1,0 +1,227 @@
+-- LMT__V1 Script (Updated with intro text fade)
+print("LMT__V1 - Đang khởi động...")
+
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Tạo ScreenGui chính
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "LMTMenuGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = playerGui
+
+-- Tạo TextLabel giới thiệu "LMT__V1"
+local IntroLabel = Instance.new("TextLabel")
+IntroLabel.Size = UDim2.new(0.6, 0, 0.15, 0)
+IntroLabel.Position = UDim2.new(0.2, 0, 0.425, 0)
+IntroLabel.BackgroundTransparency = 1
+IntroLabel.Text = "LMT__V1"
+IntroLabel.TextColor3 = Color3.fromRGB(100, 180, 255)
+IntroLabel.TextScaled = true
+IntroLabel.Font = Enum.Font.SourceSansBold
+IntroLabel.TextStrokeTransparency = 0.7
+IntroLabel.TextStrokeColor3 = Color3.fromRGB(0, 0, 0)
+IntroLabel.Parent = ScreenGui
+
+-- Hiệu ứng fade out sau 2.5 giây
+wait(2.5)
+
+local fadeTween = TweenService:Create(IntroLabel, TweenInfo.new(1.5, Enum.EasingStyle.Sine, Enum.EasingDirection.In), {
+    TextTransparency = 1,
+    TextStrokeTransparency = 1
+})
+
+fadeTween:Play()
+fadeTween.Completed:Connect(function()
+    IntroLabel:Destroy()
+    
+    -- Sau khi chữ fade xong mới hiện menu
+    spawn(function()
+        -- Main Menu Frame (lá cờ nhỏ)
+        local MainFrame = Instance.new("Frame")
+        MainFrame.Size = UDim2.new(0, 40, 0, 36)
+        MainFrame.Position = UDim2.new(0.08, 0, 0.4, 0)
+        MainFrame.BackgroundTransparency = 1
+        MainFrame.Parent = ScreenGui
+
+        local FlagImage = Instance.new("ImageButton")
+        FlagImage.Size = UDim2.new(1, 0, 1, 0)
+        FlagImage.Image = "rbxassetid://11548089657"  -- Cờ Việt Nam
+        FlagImage.BackgroundTransparency = 1
+        FlagImage.Parent = MainFrame
+
+        -- Inner Menu Frame
+        local InnerFrame = Instance.new("Frame")
+        InnerFrame.Size = UDim2.new(0, 200, 0, 120)
+        InnerFrame.Position = UDim2.new(0.5, -100, 0.5, -60)
+        InnerFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+        InnerFrame.BorderSizePixel = 2
+        InnerFrame.BorderColor3 = Color3.fromRGB(80, 80, 255)
+        InnerFrame.Visible = false
+        InnerFrame.Parent = ScreenGui
+
+        -- Draggable cho lá cờ
+        local dragging, dragInput, dragStart, startPos
+        local function updateDrag(input)
+            local delta = input.Position - dragStart
+            MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+
+        FlagImage.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                dragging = true
+                dragStart = input.Position
+                startPos = MainFrame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then dragging = false end
+                end)
+            end
+        end)
+
+        FlagImage.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                dragInput = input
+            end
+        end)
+
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if dragging and dragInput then updateDrag(dragInput) end
+        end)
+
+        -- Draggable cho menu trong (giữ nguyên code cũ)
+        local innerDragging, innerDragInput, innerDragStart, innerStartPos
+        local function updateInnerDrag(input)
+            local delta = input.Position - innerDragStart
+            InnerFrame.Position = UDim2.new(innerStartPos.X.Scale, innerStartPos.X.Offset + delta.X, innerStartPos.Y.Scale, innerStartPos.Y.Offset + delta.Y)
+        end
+
+        InnerFrame.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+                innerDragging = true
+                innerDragStart = input.Position
+                innerStartPos = InnerFrame.Position
+                input.Changed:Connect(function()
+                    if input.UserInputState == Enum.UserInputState.End then innerDragging = false end
+                end)
+            end
+        end)
+
+        InnerFrame.InputChanged:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+                innerDragInput = input
+            end
+        end)
+
+        game:GetService("RunService").RenderStepped:Connect(function()
+            if innerDragging and innerDragInput then updateInnerDrag(innerDragInput) end
+        end)
+
+        -- Toggle menu
+        FlagImage.MouseButton1Click:Connect(function()
+            InnerFrame.Visible = not InnerFrame.Visible
+        end)
+
+        -- CDVN button
+        local CDVNButton = Instance.new("TextButton")
+        CDVNButton.Size = UDim2.new(0.45, 0, 0.22, 0)
+        CDVNButton.Position = UDim2.new(0.05, 0, 0.08, 0)
+        CDVNButton.Text = "CDVN"
+        CDVNButton.BackgroundColor3 = Color3.fromRGB(50, 50, 80)
+        CDVNButton.TextColor3 = Color3.fromRGB(200, 220, 255)
+        CDVNButton.Font = Enum.Font.SourceSansBold
+        CDVNButton.TextSize = 18
+        CDVNButton.Parent = InnerFrame
+
+        -- Fix Lag button
+        local FixLagButton = Instance.new("TextButton")
+        FixLagButton.Size = UDim2.new(0.45, 0, 0.22, 0)
+        FixLagButton.Position = UDim2.new(0.05, 0, 0.35, 0)
+        FixLagButton.Text = "Fix Lag"
+        FixLagButton.BackgroundColor3 = Color3.fromRGB(60, 40, 40)
+        FixLagButton.TextColor3 = Color3.fromRGB(255, 200, 200)
+        FixLagButton.Font = Enum.Font.SourceSansBold
+        FixLagButton.TextSize = 16
+        FixLagButton.Parent = InnerFrame
+
+        -- Tabs Frame cho CDVN
+        local TabsFrame = Instance.new("Frame")
+        TabsFrame.Size = UDim2.new(0.45, 0, 0.6, 0)
+        TabsFrame.Position = UDim2.new(0.5, 0, 0.08, 0)
+        TabsFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+        TabsFrame.Visible = false
+        TabsFrame.Parent = InnerFrame
+
+        local ZenoxButton = Instance.new("TextButton")
+        ZenoxButton.Size = UDim2.new(1, 0, 0.3, 0)
+        ZenoxButton.Position = UDim2.new(0, 0, 0, 0)
+        ZenoxButton.Text = "Zenox"
+        ZenoxButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+        ZenoxButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        ZenoxButton.TextSize = 15
+        ZenoxButton.Parent = TabsFrame
+        ZenoxButton.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/dung145/ZENX/refs/heads/main/Renxpvp.lua"))()
+        end)
+
+        local MiniHubButton = Instance.new("TextButton")
+        MiniHubButton.Size = UDim2.new(1, 0, 0.3, 0)
+        MiniHubButton.Position = UDim2.new(0, 0, 0.35, 0)
+        MiniHubButton.Text = "Mini Hub"
+        MiniHubButton.BackgroundColor3 = Color3.fromRGB(70, 70, 100)
+        MiniHubButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+        MiniHubButton.TextSize = 15
+        MiniHubButton.Parent = TabsFrame
+        MiniHubButton.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/MNHUB-Lua/Cong-Dong-Viet-Nam/refs/heads/MNHUB/Farm%20Level.lua"))()
+        end)
+
+        local TreoGameButton = Instance.new("TextButton")
+        TreoGameButton.Size = UDim2.new(1, 0, 0.3, 0)
+        TreoGameButton.Position = UDim2.new(0, 0, 0.7, 0)
+        TreoGameButton.Text = "Treo Game"
+        TreoGameButton.BackgroundColor3 = Color3.fromRGB(70, 100, 70)
+        TreoGameButton.TextColor3 = Color3.fromRGB(220, 255, 220)
+        TreoGameButton.TextSize = 15
+        TreoGameButton.Parent = TabsFrame
+        TreoGameButton.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/ducanhhere/afk-fps-tool/main/script.lua"))()
+        end)
+
+        -- Tabs Frame cho Fix Lag
+        local FixTabsFrame = Instance.new("Frame")
+        FixTabsFrame.Size = UDim2.new(0.45, 0, 0.6, 0)
+        FixTabsFrame.Position = UDim2.new(0.5, 0, 0.08, 0)
+        FixTabsFrame.BackgroundColor3 = Color3.fromRGB(50, 30, 30)
+        FixTabsFrame.Visible = false
+        FixTabsFrame.Parent = InnerFrame
+
+        local FixHookButton = Instance.new("TextButton")
+        FixHookButton.Size = UDim2.new(1, 0, 0.5, 0)
+        FixHookButton.Position = UDim2.new(0, 0, 0.1, 0)
+        FixHookButton.Text = "fix🪝🦋"
+        FixHookButton.BackgroundColor3 = Color3.fromRGB(90, 50, 50)
+        FixHookButton.TextColor3 = Color3.fromRGB(255, 180, 180)
+        FixHookButton.TextSize = 16
+        FixHookButton.Font = Enum.Font.SourceSansBold
+        FixHookButton.Parent = FixTabsFrame
+        FixHookButton.MouseButton1Click:Connect(function()
+            loadstring(game:HttpGet("https://raw.githubusercontent.com/TurboLite/Script/main/FixLag.lua"))()
+        end)
+
+        -- Toggle logic
+        CDVNButton.MouseButton1Click:Connect(function()
+            TabsFrame.Visible = not TabsFrame.Visible
+            FixTabsFrame.Visible = false
+        end)
+
+        FixLagButton.MouseButton1Click:Connect(function()
+            FixTabsFrame.Visible = not FixTabsFrame.Visible
+            TabsFrame.Visible = false
+        end)
+
+        -- Menu đã sẵn sàng
+        print("LMT__V1 - Menu đã hiển thị")
+    end)
+end)
