@@ -1,0 +1,262 @@
+-- LocalScript in StarterGui
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local VirtualUser = game:GetService("VirtualUser")
+
+local player = Players.LocalPlayer
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = player:WaitForChild("PlayerGui")
+screenGui.Name = "CustomMenuGui"
+
+-- Create the intro text "emifukuda"
+local introText = Instance.new("TextLabel")
+introText.Size = UDim2.new(0.5, 0, 0.1, 0)
+introText.Position = UDim2.new(0.25, 0, 0.45, 0)
+introText.BackgroundTransparency = 1
+introText.TextTransparency = 1
+introText.Text = "emifukuda"
+introText.TextSize = 14
+introText.Font = Enum.Font.SourceSansBold
+introText.TextColor3 = Color3.new(1, 1, 1)
+introText.Parent = screenGui
+
+-- Fade in intro text
+local fadeInInfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
+local fadeIn = TweenService:Create(introText, fadeInInfo, {TextTransparency = 0})
+fadeIn:Play()
+fadeIn.Completed:Wait()
+
+wait(1) -- Display for a second
+
+-- Fade out intro text
+local fadeOut = TweenService:Create(introText, fadeInInfo, {TextTransparency = 1})
+fadeOut:Play()
+fadeOut.Completed:Wait()
+introText:Destroy()
+
+-- Now show the menu button
+local menuButton = Instance.new("Frame")
+menuButton.Size = UDim2.new(0, 50, 0, 50) -- Approximate small size, adjust as needed (0.79cm ~50px depending on DPI)
+menuButton.Position = UDim2.new(0.5, 0, 0.5, 0)
+menuButton.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)
+menuButton.Parent = screenGui
+local uiCornerButton = Instance.new("UICorner")
+uiCornerButton.CornerRadius = UDim.new(0.5, 0) -- Circular
+uiCornerButton.Parent = menuButton
+
+-- Menu Frame
+local menuFrame = Instance.new("Frame")
+menuFrame.Size = UDim2.new(0, 200, 0, 175) -- Approx 4cm x 3.49cm ~200px x 175px
+menuFrame.Position = UDim2.new(0.5, -100, 0.5, -87)
+menuFrame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
+menuFrame.Visible = false
+menuFrame.Parent = screenGui
+local uiCornerMenu = Instance.new("UICorner")
+uiCornerMenu.CornerRadius = UDim.new(0, 10) -- Rounded corners
+uiCornerMenu.Parent = menuFrame
+
+-- Title Text
+local titleText = Instance.new("TextLabel")
+titleText.Size = UDim2.new(1, 0, 0.2, 0)
+titleText.Position = UDim2.new(0, 0, 0, 0)
+titleText.BackgroundTransparency = 1
+titleText.Text = "treo tiền vui vẻ🦋"
+titleText.TextSize = 18
+titleText.Font = Enum.Font.SourceSansBold
+titleText.TextColor3 = Color3.new(1, 1, 1)
+titleText.Parent = menuFrame
+
+-- Timer Progress Bar for current cycle (0-180 seconds)
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(1, 0, 0.1, 0)
+timerLabel.Position = UDim2.new(0, 0, 0.2, 0)
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = "Thời gian treo:"
+timerLabel.TextSize = 16
+timerLabel.Font = Enum.Font.SourceSans
+timerLabel.TextColor3 = Color3.new(1, 1, 1)
+timerLabel.Parent = menuFrame
+
+local timerBarFrame = Instance.new("Frame")
+timerBarFrame.Size = UDim2.new(1, 0, 0.1, 0)
+timerBarFrame.Position = UDim2.new(0, 0, 0.3, 0)
+timerBarFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+timerBarFrame.Parent = menuFrame
+
+local timerBar = Instance.new("Frame")
+timerBar.Size = UDim2.new(0, 0, 1, 0)
+timerBar.BackgroundColor3 = Color3.new(0, 1, 0)
+timerBar.Parent = timerBarFrame
+
+local timerText = Instance.new("TextLabel")
+timerText.Size = UDim2.new(1, 0, 1, 0)
+timerText.BackgroundTransparency = 1
+timerText.Text = "0/180"
+timerText.TextSize = 16
+timerText.Font = Enum.Font.SourceSans
+timerText.TextColor3 = Color3.new(0, 0, 0)
+timerText.Parent = timerBarFrame
+
+-- Accumulated Minutes
+local accumulatedLabel = Instance.new("TextLabel")
+accumulatedLabel.Size = UDim2.new(1, 0, 0.1, 0)
+accumulatedLabel.Position = UDim2.new(0, 0, 0.4, 0)
+accumulatedLabel.BackgroundTransparency = 1
+accumulatedLabel.Text = "Đã treo được:"
+accumulatedLabel.TextSize = 16
+accumulatedLabel.Font = Enum.Font.SourceSans
+accumulatedLabel.TextColor3 = Color3.new(1, 1, 1)
+accumulatedLabel.Parent = menuFrame
+
+local accumulatedBarFrame = Instance.new("Frame")
+accumulatedBarFrame.Size = UDim2.new(1, 0, 0.1, 0)
+accumulatedBarFrame.Position = UDim2.new(0, 0, 0.5, 0)
+accumulatedBarFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+accumulatedBarFrame.Parent = menuFrame
+
+local accumulatedBar = Instance.new("Frame")
+accumulatedBar.Size = UDim2.new(0, 0, 1, 0)
+accumulatedBar.BackgroundColor3 = Color3.new(0, 1, 0)
+accumulatedBar.Parent = accumulatedBarFrame
+
+local accumulatedText = Instance.new("TextLabel")
+accumulatedText.Size = UDim2.new(1, 0, 1, 0)
+accumulatedText.BackgroundTransparency = 1
+accumulatedText.Text = "0 phút"
+accumulatedText.TextSize = 16
+accumulatedText.Font = Enum.Font.SourceSans
+accumulatedText.TextColor3 = Color3.new(0, 0, 0)
+accumulatedText.Parent = accumulatedBarFrame
+
+-- FPS Text
+local fpsText = Instance.new("TextLabel")
+fpsText.Size = UDim2.new(1, 0, 0.1, 0)
+fpsText.Position = UDim2.new(0, 0, 0.6, 0)
+fpsText.BackgroundTransparency = 1
+fpsText.Text = "FPS: 0"
+fpsText.TextSize = 17
+fpsText.Font = Enum.Font.SourceSans
+fpsText.TextColor3 = Color3.new(1, 1, 1)
+fpsText.Parent = menuFrame
+
+-- Fix Lag Toggle Button
+local fixLagButton = Instance.new("TextButton")
+fixLagButton.Size = UDim2.new(1, 0, 0.1, 0)
+fixLagButton.Position = UDim2.new(0, 0, 0.7, 0)
+fixLagButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
+fixLagButton.Text = "Bật fix lag"
+fixLagButton.TextSize = 14
+fixLagButton.Font = Enum.Font.SourceSans
+fixLagButton.TextColor3 = Color3.new(0, 1, 0) -- Green for off
+fixLagButton.Parent = menuFrame
+
+local isFixLagOn = false
+
+fixLagButton.MouseButton1Click:Connect(function()
+    isFixLagOn = not isFixLagOn
+    if isFixLagOn then
+        fixLagButton.TextColor3 = Color3.new(1, 0, 0) -- Red for on
+        -- Remove skins/textures from map to reduce lag
+        for _, obj in ipairs(workspace:GetDescendants()) do
+            if obj:IsA("BasePart") then
+                obj.MaterialVariant = ""
+                obj.TextureID = ""
+            elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
+                obj:Destroy()
+            end
+        end
+    else
+        fixLagButton.TextColor3 = Color3.new(0, 1, 0) -- Green for off
+        -- Note: No revert functionality as skins are destroyed
+    end
+end)
+
+-- Timer logic
+local cycleTime = 180 -- seconds per cycle
+local startTime = tick()
+local accumulatedMinutes = 0
+local maxAccumulated = 60 -- Assume some max for bar, adjust as needed
+
+RunService.Heartbeat:Connect(function()
+    local elapsed = tick() - startTime
+    local currentCycle = elapsed % cycleTime
+    local progress = currentCycle / cycleTime
+    timerBar.Size = UDim2.new(progress, 0, 1, 0)
+    timerText.Text = math.floor(currentCycle) .. "/" .. cycleTime
+    
+    if elapsed >= cycleTime then
+        local cyclesCompleted = math.floor(elapsed / cycleTime)
+        accumulatedMinutes = cyclesCompleted * (cycleTime / 60) -- Each cycle is 3 minutes (180/60=3)
+        startTime = startTime + (cyclesCompleted * cycleTime) -- Adjust start time to account for completed cycles
+    end
+    
+    local accProgress = math.min(accumulatedMinutes / maxAccumulated, 1)
+    accumulatedBar.Size = UDim2.new(accProgress, 0, 1, 0)
+    accumulatedText.Text = accumulatedMinutes .. " phút"
+end)
+
+-- FPS calculation
+local lastTime = tick()
+local frameCount = 0
+RunService.RenderStepped:Connect(function()
+    frameCount = frameCount + 1
+    local currentTime = tick()
+    if currentTime - lastTime >= 1 then
+        fpsText.Text = "FPS: " .. frameCount
+        frameCount = 0
+        lastTime = currentTime
+    end
+end)
+
+-- Toggle menu on button click
+menuButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        menuFrame.Visible = not menuFrame.Visible
+    end
+end)
+
+-- Draggable function
+local function makeDraggable(frame)
+    local dragging = false
+    local dragInput
+    local dragStart
+    local startPos
+
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then
+                    dragging = false
+                end
+            end)
+        end
+    end)
+
+    frame.InputChanged:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+            dragInput = input
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if input == dragInput and dragging then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+makeDraggable(menuButton)
+makeDraggable(menuFrame)
+
+-- Anti AFK (anti kick after 20 minutes idle)
+player.Idled:Connect(function()
+    VirtualUser:CaptureController()
+    VirtualUser:ClickButton2(Vector2.new())
+end)
