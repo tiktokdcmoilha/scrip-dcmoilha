@@ -1,235 +1,130 @@
--- LocalScript in StarterGui
-local TweenService = game:GetService("TweenService")
-local UserInputService = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local VirtualUser = game:GetService("VirtualUser")
+-- Anti-AFK Script with Custom GUI for Roblox
+-- Updated: Outer circle size 20, fix lag toggle working properly
 
-local player = Players.LocalPlayer
-local screenGui = Instance.new("ScreenGui")
-screenGui.Parent = player:WaitForChild("PlayerGui")
-screenGui.Name = "CustomMenuGui"
+local player = game.Players.LocalPlayer
+local gui = Instance.new("ScreenGui")
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.Name = "AntiAFKGui"
+gui.ResetOnSpawn = false
 
--- Create the intro text "emifukuda"
-local introText = Instance.new("TextLabel")
-introText.Size = UDim2.new(0.5, 0, 0.1, 0)
-introText.Position = UDim2.new(0.25, 0, 0.45, 0)
-introText.BackgroundTransparency = 1
-introText.TextTransparency = 1
-introText.Text = "emifukuda"
-introText.TextSize = 14
-introText.Font = Enum.Font.SourceSansBold
-introText.TextColor3 = Color3.new(1, 1, 1)
-introText.Parent = screenGui
+-- Outer Circular Button (to hơn = 20)
+local outerButton = Instance.new("ImageButton")
+outerButton.Size = UDim2.new(0, 20, 0, 20)  -- Size 20
+outerButton.Position = UDim2.new(0.5, -10, 0.5, -10)  -- Center
+outerButton.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
+outerButton.BackgroundTransparency = 0.4
+outerButton.BorderSizePixel = 0
+outerButton.AutoButtonColor = false
+outerButton.Parent = gui
 
--- Fade in intro text
-local fadeInInfo = TweenInfo.new(1, Enum.EasingStyle.Linear)
-local fadeIn = TweenService:Create(introText, fadeInInfo, {TextTransparency = 0})
-fadeIn:Play()
-fadeIn.Completed:Wait()
+local outerCorner = Instance.new("UICorner")
+outerCorner.CornerRadius = UDim.new(1, 0)  -- tròn hoàn toàn
+outerCorner.Parent = outerButton
 
-wait(1) -- Display for a second
+-- Inner Menu (Frame vuông bo góc)
+local innerMenu = Instance.new("Frame")
+innerMenu.Size = UDim2.new(0, 220, 0, 320)
+innerMenu.Position = UDim2.new(0.5, -110, 0.5, -160)
+innerMenu.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+innerMenu.BackgroundTransparency = 0.15
+innerMenu.Visible = false
+innerMenu.Parent = gui
 
--- Fade out intro text
-local fadeOut = TweenService:Create(introText, fadeInInfo, {TextTransparency = 1})
-fadeOut:Play()
-fadeOut.Completed:Wait()
-introText:Destroy()
+local innerCorner = Instance.new("UICorner")
+innerCorner.CornerRadius = UDim.new(0, 20)
+innerCorner.Parent = innerMenu
 
--- Now show the menu button
-local menuButton = Instance.new("Frame")
-menuButton.Size = UDim2.new(0, 50, 0, 50) -- Approximate small size, adjust as needed (0.79cm ~50px depending on DPI)
-menuButton.Position = UDim2.new(0.5, 0, 0.5, 0)
-menuButton.BackgroundColor3 = Color3.new(0.5, 0.5, 0.5)
-menuButton.Parent = screenGui
-local uiCornerButton = Instance.new("UICorner")
-uiCornerButton.CornerRadius = UDim.new(0.5, 0) -- Circular
-uiCornerButton.Parent = menuButton
+-- Title
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 50)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "treo tiền cái 🦋🫙🐿️"
+titleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
+titleLabel.TextSize = 22
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Parent = innerMenu
 
--- Menu Frame
-local menuFrame = Instance.new("Frame")
-menuFrame.Size = UDim2.new(0, 200, 0, 175) -- Approx 4cm x 3.49cm ~200px x 175px
-menuFrame.Position = UDim2.new(0.5, -100, 0.5, -87)
-menuFrame.BackgroundColor3 = Color3.new(0.2, 0.2, 0.2)
-menuFrame.Visible = false
-menuFrame.Parent = screenGui
-local uiCornerMenu = Instance.new("UICorner")
-uiCornerMenu.CornerRadius = UDim.new(0, 10) -- Rounded corners
-uiCornerMenu.Parent = menuFrame
+-- Countdown Frame
+local countdownFrame = Instance.new("Frame")
+countdownFrame.Size = UDim2.new(0.8, 0, 0, 45)
+countdownFrame.Position = UDim2.new(0.1, 0, 0.18, 0)
+countdownFrame.BackgroundColor3 = Color3.fromRGB(90, 90, 120)
+countdownFrame.Parent = innerMenu
 
--- Title Text
-local titleText = Instance.new("TextLabel")
-titleText.Size = UDim2.new(1, 0, 0.2, 0)
-titleText.Position = UDim2.new(0, 0, 0, 0)
-titleText.BackgroundTransparency = 1
-titleText.Text = "treo tiền vui vẻ🦋"
-titleText.TextSize = 18
-titleText.Font = Enum.Font.SourceSansBold
-titleText.TextColor3 = Color3.new(1, 1, 1)
-titleText.Parent = menuFrame
+local cdCorner = Instance.new("UICorner")
+cdCorner.CornerRadius = UDim.new(0, 8)
+cdCorner.Parent = countdownFrame
 
--- Timer Progress Bar for current cycle (0-180 seconds)
-local timerLabel = Instance.new("TextLabel")
-timerLabel.Size = UDim2.new(1, 0, 0.1, 0)
-timerLabel.Position = UDim2.new(0, 0, 0.2, 0)
-timerLabel.BackgroundTransparency = 1
-timerLabel.Text = "Thời gian treo:"
-timerLabel.TextSize = 16
-timerLabel.Font = Enum.Font.SourceSans
-timerLabel.TextColor3 = Color3.new(1, 1, 1)
-timerLabel.Parent = menuFrame
+local countdownLabel = Instance.new("TextLabel")
+countdownLabel.Size = UDim2.new(1, 0, 1, 0)
+countdownLabel.BackgroundTransparency = 1
+countdownLabel.TextColor3 = Color3.fromRGB(255, 240, 180)
+countdownLabel.TextSize = 24
+countdownLabel.Text = "380"
+countdownLabel.Parent = countdownFrame
 
-local timerBarFrame = Instance.new("Frame")
-timerBarFrame.Size = UDim2.new(1, 0, 0.1, 0)
-timerBarFrame.Position = UDim2.new(0, 0, 0.3, 0)
-timerBarFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-timerBarFrame.Parent = menuFrame
+-- Minutes Frame
+local minutesFrame = Instance.new("Frame")
+minutesFrame.Size = UDim2.new(0.8, 0, 0, 35)
+minutesFrame.Position = UDim2.new(0.1, 0, 0.32, 0)
+minutesFrame.BackgroundColor3 = Color3.fromRGB(120, 120, 150)
+minutesFrame.Parent = innerMenu
 
-local timerBar = Instance.new("Frame")
-timerBar.Size = UDim2.new(0, 0, 1, 0)
-timerBar.BackgroundColor3 = Color3.new(0, 1, 0)
-timerBar.Parent = timerBarFrame
+local minLabel = Instance.new("TextLabel")
+minLabel.Size = UDim2.new(1, 0, 1, 0)
+minLabel.BackgroundTransparency = 1
+minLabel.TextColor3 = Color3.fromRGB(255, 255, 200)
+minLabel.TextSize = 20
+minLabel.Text = "Phút treo: 0"
+minLabel.Parent = minutesFrame
 
-local timerText = Instance.new("TextLabel")
-timerText.Size = UDim2.new(1, 0, 1, 0)
-timerText.BackgroundTransparency = 1
-timerText.Text = "0/180"
-timerText.TextSize = 16
-timerText.Font = Enum.Font.SourceSans
-timerText.TextColor3 = Color3.new(0, 0, 0)
-timerText.Parent = timerBarFrame
+-- FPS Label
+local fpsLabel = Instance.new("TextLabel")
+fpsLabel.Size = UDim2.new(1, 0, 0, 30)
+fpsLabel.Position = UDim2.new(0, 0, 0.42, 0)
+fpsLabel.BackgroundTransparency = 1
+fpsLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+fpsLabel.TextSize = 18
+fpsLabel.Text = "FPS: Calculating..."
+fpsLabel.Parent = innerMenu
 
--- Accumulated Minutes
-local accumulatedLabel = Instance.new("TextLabel")
-accumulatedLabel.Size = UDim2.new(1, 0, 0.1, 0)
-accumulatedLabel.Position = UDim2.new(0, 0, 0.4, 0)
-accumulatedLabel.BackgroundTransparency = 1
-accumulatedLabel.Text = "Đã treo được:"
-accumulatedLabel.TextSize = 16
-accumulatedLabel.Font = Enum.Font.SourceSans
-accumulatedLabel.TextColor3 = Color3.new(1, 1, 1)
-accumulatedLabel.Parent = menuFrame
+-- Lag Fix Toggle
+local lagToggleFrame = Instance.new("TextButton")  -- Dùng TextButton để dễ click hơn
+lagToggleFrame.Size = UDim2.new(0.8, 0, 0, 40)
+lagToggleFrame.Position = UDim2.new(0.1, 0, 0.52, 0)
+lagToggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80)   -- xanh = off
+lagToggleFrame.TextColor3 = Color3.fromRGB(0, 0, 0)
+lagToggleFrame.Text = "Fix Lag: Off"
+lagToggleFrame.TextSize = 20
+lagToggleFrame.Font = Enum.Font.SourceSansSemibold
+lagToggleFrame.Parent = innerMenu
 
-local accumulatedBarFrame = Instance.new("Frame")
-accumulatedBarFrame.Size = UDim2.new(1, 0, 0.1, 0)
-accumulatedBarFrame.Position = UDim2.new(0, 0, 0.5, 0)
-accumulatedBarFrame.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-accumulatedBarFrame.Parent = menuFrame
+local lagCorner = Instance.new("UICorner")
+lagCorner.CornerRadius = UDim.new(0, 10)
+lagCorner.Parent = lagToggleFrame
 
-local accumulatedBar = Instance.new("Frame")
-accumulatedBar.Size = UDim2.new(0, 0, 1, 0)
-accumulatedBar.BackgroundColor3 = Color3.new(0, 1, 0)
-accumulatedBar.Parent = accumulatedBarFrame
+local lagEnabled = false
 
-local accumulatedText = Instance.new("TextLabel")
-accumulatedText.Size = UDim2.new(1, 0, 1, 0)
-accumulatedText.BackgroundTransparency = 1
-accumulatedText.Text = "0 phút"
-accumulatedText.TextSize = 16
-accumulatedText.Font = Enum.Font.SourceSans
-accumulatedText.TextColor3 = Color3.new(0, 0, 0)
-accumulatedText.Parent = accumulatedBarFrame
+-- Lưu setting gốc để reset
+local originalSettings = {
+    QualityLevel = settings().Rendering.QualityLevel,
+    Brightness = game.Lighting.Brightness,
+    GlobalShadows = game.Lighting.GlobalShadows,
+    Technology = game.Lighting.Technology,
+    FogEnd = game.Lighting.FogEnd,
+    FOV = workspace.CurrentCamera.FieldOfView,
+}
 
--- FPS Text
-local fpsText = Instance.new("TextLabel")
-fpsText.Size = UDim2.new(1, 0, 0.1, 0)
-fpsText.Position = UDim2.new(0, 0, 0.6, 0)
-fpsText.BackgroundTransparency = 1
-fpsText.Text = "FPS: 0"
-fpsText.TextSize = 17
-fpsText.Font = Enum.Font.SourceSans
-fpsText.TextColor3 = Color3.new(1, 1, 1)
-fpsText.Parent = menuFrame
-
--- Fix Lag Toggle Button
-local fixLagButton = Instance.new("TextButton")
-fixLagButton.Size = UDim2.new(1, 0, 0.1, 0)
-fixLagButton.Position = UDim2.new(0, 0, 0.7, 0)
-fixLagButton.BackgroundColor3 = Color3.new(0.3, 0.3, 0.3)
-fixLagButton.Text = "Bật fix lag"
-fixLagButton.TextSize = 14
-fixLagButton.Font = Enum.Font.SourceSans
-fixLagButton.TextColor3 = Color3.new(0, 1, 0) -- Green for off
-fixLagButton.Parent = menuFrame
-
-local isFixLagOn = false
-
-fixLagButton.MouseButton1Click:Connect(function()
-    isFixLagOn = not isFixLagOn
-    if isFixLagOn then
-        fixLagButton.TextColor3 = Color3.new(1, 0, 0) -- Red for on
-        -- Remove skins/textures from map to reduce lag
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj:IsA("BasePart") then
-                obj.MaterialVariant = ""
-                obj.TextureID = ""
-            elseif obj:IsA("Decal") or obj:IsA("Texture") or obj:IsA("SurfaceAppearance") then
-                obj:Destroy()
-            end
-        end
-    else
-        fixLagButton.TextColor3 = Color3.new(0, 1, 0) -- Green for off
-        -- Note: No revert functionality as skins are destroyed
-    end
-end)
-
--- Timer logic
-local cycleTime = 180 -- seconds per cycle
-local startTime = tick()
-local accumulatedMinutes = 0
-local maxAccumulated = 60 -- Assume some max for bar, adjust as needed
-
-RunService.Heartbeat:Connect(function()
-    local elapsed = tick() - startTime
-    local currentCycle = elapsed % cycleTime
-    local progress = currentCycle / cycleTime
-    timerBar.Size = UDim2.new(progress, 0, 1, 0)
-    timerText.Text = math.floor(currentCycle) .. "/" .. cycleTime
-    
-    if elapsed >= cycleTime then
-        local cyclesCompleted = math.floor(elapsed / cycleTime)
-        accumulatedMinutes = cyclesCompleted * (cycleTime / 60) -- Each cycle is 3 minutes (180/60=3)
-        startTime = startTime + (cyclesCompleted * cycleTime) -- Adjust start time to account for completed cycles
-    end
-    
-    local accProgress = math.min(accumulatedMinutes / maxAccumulated, 1)
-    accumulatedBar.Size = UDim2.new(accProgress, 0, 1, 0)
-    accumulatedText.Text = accumulatedMinutes .. " phút"
-end)
-
--- FPS calculation
-local lastTime = tick()
-local frameCount = 0
-RunService.RenderStepped:Connect(function()
-    frameCount = frameCount + 1
-    local currentTime = tick()
-    if currentTime - lastTime >= 1 then
-        fpsText.Text = "FPS: " .. frameCount
-        frameCount = 0
-        lastTime = currentTime
-    end
-end)
-
--- Toggle menu on button click
-menuButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        menuFrame.Visible = not menuFrame.Visible
-    end
-end)
-
--- Draggable function
+-- Hàm kéo thả (draggable)
 local function makeDraggable(frame)
-    local dragging = false
-    local dragInput
-    local dragStart
-    local startPos
-
+    local dragging, dragInput, dragStart, startPos
+    
     frame.InputBegan:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
             dragging = true
             dragStart = input.Position
             startPos = frame.Position
-
+            
             input.Changed:Connect(function()
                 if input.UserInputState == Enum.UserInputState.End then
                     dragging = false
@@ -237,26 +132,104 @@ local function makeDraggable(frame)
             end)
         end
     end)
-
+    
     frame.InputChanged:Connect(function(input)
         if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
             dragInput = input
         end
     end)
-
-    UserInputService.InputChanged:Connect(function(input)
+    
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
         if input == dragInput and dragging then
             local delta = input.Position - dragStart
-            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            frame.Position = UDim2.new(
+                startPos.X.Scale, startPos.X.Offset + delta.X,
+                startPos.Y.Scale, startPos.Y.Offset + delta.Y
+            )
         end
     end)
 end
 
-makeDraggable(menuButton)
-makeDraggable(menuFrame)
+makeDraggable(outerButton)
+makeDraggable(innerMenu)
 
--- Anti AFK (anti kick after 20 minutes idle)
-player.Idled:Connect(function()
-    VirtualUser:CaptureController()
-    VirtualUser:ClickButton2(Vector2.new())
+-- Toggle menu khi bấm vòng tròn ngoài
+outerButton.MouseButton1Click:Connect(function()
+    innerMenu.Visible = not innerMenu.Visible
 end)
+
+-- Toggle Fix Lag (sửa lỗi toggle không hoạt động)
+lagToggleFrame.MouseButton1Click:Connect(function()
+    lagEnabled = not lagEnabled
+    
+    if lagEnabled then
+        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(220, 40, 40)   -- đỏ = on
+        lagToggleFrame.Text = "Fix Lag: On"
+        
+        -- Áp dụng fix lag mạnh
+        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
+        game.Lighting.Brightness = 1
+        game.Lighting.GlobalShadows = false
+        game.Lighting.Technology = Enum.Technology.Compatibility
+        game.Lighting.FogEnd = math.huge
+        workspace.CurrentCamera.FieldOfView = 55
+        
+        -- Tắt particle, trail, beam...
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+                v.Enabled = false
+            end
+        end
+    else
+        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80)   -- xanh = off
+        lagToggleFrame.Text = "Fix Lag: Off"
+        
+        -- Reset về gốc
+        settings().Rendering.QualityLevel = originalSettings.QualityLevel
+        game.Lighting.Brightness = originalSettings.Brightness
+        game.Lighting.GlobalShadows = originalSettings.GlobalShadows
+        game.Lighting.Technology = originalSettings.Technology
+        game.Lighting.FogEnd = originalSettings.FogEnd
+        workspace.CurrentCamera.FieldOfView = originalSettings.FOV
+        
+        -- Bật lại effect
+        for _, v in ipairs(workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+                v.Enabled = true
+            end
+        end
+    end
+end)
+
+-- Timer + FPS
+local countdown = 380
+local totalMinutes = 0
+
+game:GetService("RunService").Heartbeat:Connect(function(dt)
+    local fps = math.floor(1 / dt + 0.5)
+    fpsLabel.Text = "FPS: " .. fps
+    
+    countdown = countdown - dt
+    countdownLabel.Text = math.floor(countdown)
+    
+    if countdown <= 0 then
+        countdown = 380
+        totalMinutes = totalMinutes + 6  -- 380 giây ≈ 6 phút 20 giây → cộng 6 phút
+        minLabel.Text = "Phút treo: " .. totalMinutes
+    end
+end)
+
+-- Anti-AFK đơn giản
+spawn(function()
+    while true do
+        task.wait(math.random(12, 35))
+        if player.Character and player.Character:FindFirstChild("Humanoid") then
+            local hum = player.Character.Humanoid
+            hum:Move(Vector3.new(math.random(-1,1)*0.8, 0, math.random(-1,1)*0.8))
+            task.wait(0.08)
+            hum.Jump = true
+        end
+    end
+end)
+
+print("Anti-AFK Menu Loaded - Circle size 20 & Lag Fix fixed!")
