@@ -1,57 +1,154 @@
---// Treo Tien Script - LMT
---// Anti AFK 20p + Fix Lag + Timer
+--// TREO TIEN VUI VE - AUTO REJOIN + TELE NGOI LAI
+--// Anti AFK cao cap | Treo dem | Fix nga
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local VirtualUser = game:GetService("VirtualUser")
-local UserInputService = game:GetService("UserInputService")
+local CAS = game:GetService("ContextActionService")
+local UIS = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+
 local player = Players.LocalPlayer
+local cam = workspace.CurrentCamera
 
--- Anti AFK
-player.Idled:Connect(function()
-	VirtualUser:Button2Down(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-	task.wait(1)
-	VirtualUser:Button2Up(Vector2.new(0,0),workspace.CurrentCamera.CFrame)
-end)
+------------------------------------------------
+-- LUU VI TRI + GHE
+------------------------------------------------
+local savedData = {
+	cframe = nil,
+	seatName = nil
+}
 
--- Nhân vật ngồi im
-local function sitCharacter()
+local function savePosition()
+	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		savedData.cframe = player.Character.HumanoidRootPart.CFrame
+	end
+
 	if player.Character and player.Character:FindFirstChild("Humanoid") then
 		local hum = player.Character.Humanoid
-		hum.WalkSpeed = 0
-		hum.JumpPower = 0
-		hum.Sit = true
+		if hum.SeatPart then
+			savedData.seatName = hum.SeatPart.Name
+		end
+	end
+
+	if writefile then
+		writefile("treotien_save.json", HttpService:JSONEncode(savedData))
 	end
 end
-sitCharacter()
 
+-- Lưu mỗi 10s (treo đêm)
+task.spawn(function()
+	while true do
+		task.wait(10)
+		savePosition()
+	end
+end)
+
+------------------------------------------------
+-- AUTO REJOIN KHI DISCONNECT
+------------------------------------------------
+game:GetService("GuiService").ErrorMessageChanged:Connect(function()
+	if writefile then
+		writefile("rejoin.flag", "true")
+	end
+	task.wait(2)
+	TeleportService:Teleport(game.PlaceId, player)
+end)
+
+------------------------------------------------
+-- KHI VO LAI GAME
+------------------------------------------------
+player.CharacterAdded:Connect(function(char)
+	task.wait(3)
+
+	if readfile and isfile and isfile("treotien_save.json") then
+		local data = HttpService:JSONDecode(readfile("treotien_save.json"))
+
+		if char:FindFirstChild("HumanoidRootPart") and data.cframe then
+			char.HumanoidRootPart.CFrame = data.cframe
+		end
+
+		if data.seatName then
+			for _,v in pairs(workspace:GetDescendants()) do
+				if v:IsA("Seat") or v:IsA("VehicleSeat") then
+					if v.Name == data.seatName then
+						task.wait(1)
+						char:MoveTo(v.Position)
+						task.wait(0.5)
+						v:Sit(char:FindFirstChild("Humanoid"))
+						break
+					end
+				end
+			end
+		end
+	end
+end)
+
+------------------------------------------------
+-- ANTI AFK CAO CAP
+------------------------------------------------
+player.Idled:Connect(function()
+	VirtualUser:Button2Down(Vector2.new(0,0), cam.CFrame)
+	task.wait(0.5)
+	VirtualUser:Button2Up(Vector2.new(0,0), cam.CFrame)
+end)
+
+task.spawn(function()
+	while true do
+		task.wait(30)
+		cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(1), 0)
+	end
+end)
+
+------------------------------------------------
+-- KHOA DI CHUYEN (KHONG NGA)
+------------------------------------------------
+local function blockAction()
+	return Enum.ContextActionResult.Sink
+end
+
+CAS:BindAction(
+	"BlockMove",
+	blockAction,
+	false,
+	Enum.PlayerActions.CharacterForward,
+	Enum.PlayerActions.CharacterBackward,
+	Enum.PlayerActions.CharacterLeft,
+	Enum.PlayerActions.CharacterRight,
+	Enum.PlayerActions.CharacterJump
+)
+
+------------------------------------------------
 -- GUI
+------------------------------------------------
 local gui = Instance.new("ScreenGui", player.PlayerGui)
 gui.ResetOnSpawn = false
 
--- Menu tròn
+-- NUT TRON
 local circle = Instance.new("TextButton", gui)
 circle.Size = UDim2.fromOffset(30,30)
 circle.Position = UDim2.fromScale(0.05,0.5)
 circle.Text = "⚙️"
-circle.BackgroundColor3 = Color3.fromRGB(40,40,40)
 circle.TextScaled = true
-circle.AutoButtonColor = false
+circle.BackgroundColor3 = Color3.fromRGB(45,45,45)
 Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
 
--- Menu chính
+-- MENU CHINH
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(350,300)
+main.Size = UDim2.fromOffset(350,330)
 main.Position = UDim2.fromScale(0.35,0.3)
 main.BackgroundColor3 = Color3.fromRGB(25,25,25)
 main.Visible = false
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,20)
+Instance.new("UICorner", main).CornerRadius = UDim.new(0,18)
 
--- Kéo menu
+------------------------------------------------
+-- KÉO UI
+------------------------------------------------
 local function drag(obj)
-	local dragging, dragInput, startPos, startInput
+	local dragging, startPos, startInput
 	obj.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseButton1 then
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
 			dragging = true
 			startPos = obj.Position
 			startInput = i.Position
@@ -60,18 +157,17 @@ local function drag(obj)
 	obj.InputEnded:Connect(function()
 		dragging = false
 	end)
-	UserInputService.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.Touch or i.UserInputType == Enum.UserInputType.MouseMovement) then
+	UIS.InputChanged:Connect(function(i)
+		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
 			local delta = i.Position - startInput
 			obj.Position = UDim2.new(
-				startPos.X.Scale,
-				startPos.X.Offset + delta.X,
-				startPos.Y.Scale,
-				startPos.Y.Offset + delta.Y
+				startPos.X.Scale, startPos.X.Offset + delta.X,
+				startPos.Y.Scale, startPos.Y.Offset + delta.Y
 			)
 		end
 	end)
 end
+
 drag(circle)
 drag(main)
 
@@ -79,7 +175,9 @@ circle.MouseButton1Click:Connect(function()
 	main.Visible = not main.Visible
 end)
 
--- Tiêu đề
+------------------------------------------------
+-- TIEU DE
+------------------------------------------------
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1,0,0,40)
 title.Text = "🪝🦋 Treo Tiền Vui Vẻ"
@@ -87,34 +185,43 @@ title.TextScaled = true
 title.TextColor3 = Color3.new(1,1,1)
 title.BackgroundTransparency = 1
 
--- Timer
+------------------------------------------------
+-- TIMER TREO
+------------------------------------------------
 local countdown = 380
 local totalMinutes = 0
 
-local timerLabel = Instance.new("TextLabel", main)
-timerLabel.Position = UDim2.fromOffset(20,60)
-timerLabel.Size = UDim2.fromOffset(300,30)
-timerLabel.TextColor3 = Color3.new(1,1,1)
-timerLabel.BackgroundTransparency = 1
-timerLabel.TextScaled = true
+local timer = Instance.new("TextLabel", main)
+timer.Position = UDim2.fromOffset(20,60)
+timer.Size = UDim2.fromOffset(300,30)
+timer.TextScaled = true
+timer.TextColor3 = Color3.new(1,1,1)
+timer.BackgroundTransparency = 1
 
--- Thanh phút
-local minuteBar = Instance.new("TextLabel", main)
-minuteBar.Position = UDim2.fromOffset(20,100)
-minuteBar.Size = UDim2.fromOffset(300,30)
-minuteBar.TextColor3 = Color3.fromRGB(0,255,120)
-minuteBar.BackgroundTransparency = 1
-minuteBar.TextScaled = true
+local minute = Instance.new("TextLabel", main)
+minute.Position = UDim2.fromOffset(20,100)
+minute.Size = UDim2.fromOffset(300,30)
+minute.TextScaled = true
+minute.TextColor3 = Color3.fromRGB(0,255,120)
+minute.BackgroundTransparency = 1
 
+------------------------------------------------
 -- FPS
+------------------------------------------------
 local fpsLabel = Instance.new("TextLabel", main)
 fpsLabel.Position = UDim2.fromOffset(20,140)
 fpsLabel.Size = UDim2.fromOffset(300,30)
+fpsLabel.TextScaled = true
 fpsLabel.TextColor3 = Color3.fromRGB(255,255,0)
 fpsLabel.BackgroundTransparency = 1
-fpsLabel.TextScaled = true
 
--- Fix Lag
+RunService.RenderStepped:Connect(function(dt)
+	fpsLabel.Text = "FPS: "..math.floor(1/dt)
+end)
+
+------------------------------------------------
+-- FIX LAG
+------------------------------------------------
 local fixLag = Instance.new("TextButton", main)
 fixLag.Position = UDim2.fromOffset(75,190)
 fixLag.Size = UDim2.fromOffset(200,40)
@@ -134,14 +241,9 @@ fixLag.MouseButton1Click:Connect(function()
 	end
 end)
 
--- FPS tính theo client (chuẩn Roblox)
-local fps = 0
-RunService.RenderStepped:Connect(function(dt)
-	fps = math.floor(1/dt)
-	fpsLabel.Text = "FPS: "..fps
-end)
-
--- Đếm ngược
+------------------------------------------------
+-- CHAY TREO DEM
+------------------------------------------------
 task.spawn(function()
 	while true do
 		task.wait(1)
@@ -150,7 +252,7 @@ task.spawn(function()
 			totalMinutes += math.floor(380/60)
 			countdown = 380
 		end
-		timerLabel.Text = "⏳ Còn lại: "..countdown.." giây"
-		minuteBar.Text = "🕒 Phút treo: "..totalMinutes
+		timer.Text = "⏳ Còn lại: "..countdown.." giây"
+		minute.Text = "🕒 Phút treo: "..totalMinutes
 	end
 end)
