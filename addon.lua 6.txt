@@ -1,17 +1,342 @@
--- SUPER SIMPLE ANTI-AFK - Chỉ 10 dòng code
-local VirtualInput = game:GetService("VirtualInputManager")
+-- ANTI-AFK MENU - Nhân vật ngồi yên, không nhảy
+-- Chỉ gửi input ẩn mỗi 60 giây
 
-spawn(function()
-    while true do
-        task.wait(55) -- Chờ 55 giây (an toàn < 60s)
-        
-        -- Gửi input ẩn
-        VirtualInput:SendKeyEvent(true, Enum.KeyCode.F24, false, nil)
-        task.wait(0.01)
-        VirtualInput:SendKeyEvent(false, Enum.KeyCode.F24, false, nil)
-        
-        print("[Anti-AFK] Input sent at " .. os.date("%H:%M:%S"))
+local player = game.Players.LocalPlayer
+local VirtualInput = game:GetService("VirtualInputManager")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+-- Tạo GUI chính
+local gui = Instance.new("ScreenGui")
+gui.Name = "AntiAFKMenu"
+gui.Parent = player:WaitForChild("PlayerGui")
+gui.ResetOnSpawn = false
+
+-- Nút mở menu (vòng tròn nhỏ)
+local openButton = Instance.new("ImageButton")
+openButton.Name = "OpenButton"
+openButton.Size = UDim2.new(0, 40, 0, 40)
+openButton.Position = UDim2.new(1, -50, 0.5, -20)
+openButton.BackgroundColor3 = Color3.fromRGB(80, 120, 200)
+openButton.BackgroundTransparency = 0.3
+openButton.BorderSizePixel = 0
+openButton.ZIndex = 10
+openButton.Parent = gui
+
+local openCorner = Instance.new("UICorner")
+openCorner.CornerRadius = UDim.new(1, 0)
+openCorner.Parent = openButton
+
+local openIcon = Instance.new("TextLabel")
+openIcon.Size = UDim2.new(1, 0, 1, 0)
+openIcon.BackgroundTransparency = 1
+openIcon.Text = "⚙️"
+openIcon.TextColor3 = Color3.fromRGB(255, 255, 255)
+openIcon.TextSize = 20
+openIcon.Parent = openButton
+
+-- Menu chính
+local mainMenu = Instance.new("Frame")
+mainMenu.Name = "MainMenu"
+mainMenu.Size = UDim2.new(0, 300, 0, 350)
+mainMenu.Position = UDim2.new(1, -320, 0.5, -175)
+mainMenu.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+mainMenu.BackgroundTransparency = 0.1
+mainMenu.BorderSizePixel = 0
+mainMenu.Visible = false
+mainMenu.ZIndex = 9
+mainMenu.Parent = gui
+
+local menuCorner = Instance.new("UICorner")
+menuCorner.CornerRadius = UDim.new(0, 12)
+menuCorner.Parent = mainMenu
+
+local menuShadow = Instance.new("UIStroke")
+menuShadow.Color = Color3.fromRGB(0, 0, 0)
+menuShadow.Thickness = 2
+menuShadow.Transparency = 0.7
+menuShadow.Parent = mainMenu
+
+-- Tiêu đề menu
+local titleFrame = Instance.new("Frame")
+titleFrame.Size = UDim2.new(1, 0, 0, 50)
+titleFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+titleFrame.BorderSizePixel = 0
+titleFrame.Parent = mainMenu
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 12, 0, 0)
+titleCorner.Parent = titleFrame
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -20, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "🦋 ANTI-AFK MENU 🫙"
+titleLabel.TextColor3 = Color3.fromRGB(220, 230, 255)
+titleLabel.TextSize = 22
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.Parent = titleFrame
+
+-- Nút đóng menu
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -35, 0, 10)
+closeButton.BackgroundColor3 = Color3.fromRGB(220, 80, 80)
+closeButton.Text = "✕"
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.TextSize = 18
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.Parent = titleFrame
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(1, 0)
+closeCorner.Parent = closeButton
+
+-- Nội dung menu
+local contentFrame = Instance.new("Frame")
+contentFrame.Size = UDim2.new(1, 0, 1, -50)
+contentFrame.Position = UDim2.new(0, 0, 0, 50)
+contentFrame.BackgroundTransparency = 1
+contentFrame.Parent = mainMenu
+
+-- Phần trạng thái
+local statusFrame = Instance.new("Frame")
+statusFrame.Size = UDim2.new(0.9, 0, 0, 80)
+statusFrame.Position = UDim2.new(0.05, 0, 0, 10)
+statusFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+statusFrame.Parent = contentFrame
+
+local statusCorner = Instance.new("UICorner")
+statusCorner.CornerRadius = UDim.new(0, 8)
+statusCorner.Parent = statusFrame
+
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0.5, -5)
+statusLabel.Position = UDim2.new(0, 10, 0, 5)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Text = "TRẠNG THÁI: ĐANG HOẠT ĐỘNG"
+statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+statusLabel.TextSize = 18
+statusLabel.Font = Enum.Font.SourceSansSemibold
+statusLabel.Parent = statusFrame
+
+local timerLabel = Instance.new("TextLabel")
+timerLabel.Size = UDim2.new(1, -20, 0.5, -5)
+timerLabel.Position = UDim2.new(0, 10, 0.5, 0)
+timerLabel.BackgroundTransparency = 1
+timerLabel.Text = "Next input: 60 giây"
+timerLabel.TextColor3 = Color3.fromRGB(255, 255, 180)
+timerLabel.TextSize = 16
+timerLabel.Parent = statusFrame
+
+-- Phần thời gian
+local timeFrame = Instance.new("Frame")
+timeFrame.Size = UDim2.new(0.9, 0, 0, 60)
+timeFrame.Position = UDim2.new(0.05, 0, 0, 100)
+timeFrame.BackgroundColor3 = Color3.fromRGB(40, 45, 60)
+timeFrame.Parent = contentFrame
+
+local timeCorner = Instance.new("UICorner")
+timeCorner.CornerRadius = UDim.new(0, 8)
+timeCorner.Parent = timeFrame
+
+local sessionLabel = Instance.new("TextLabel")
+sessionLabel.Size = UDim2.new(1, -20, 0.5, -5)
+sessionLabel.Position = UDim2.new(0, 10, 0, 5)
+sessionLabel.BackgroundTransparency = 1
+sessionLabel.Text = "Đã treo: 00:00:00"
+sessionLabel.TextColor3 = Color3.fromRGB(180, 220, 255)
+sessionLabel.TextSize = 16
+sessionLabel.Parent = timeFrame
+
+local minutesLabel = Instance.new("TextLabel")
+minutesLabel.Size = UDim2.new(1, -20, 0.5, -5)
+minutesLabel.Position = UDim2.new(0, 10, 0.5, 0)
+minutesLabel.BackgroundTransparency = 1
+minutesLabel.Text = "Tổng phút: 0"
+minutesLabel.TextColor3 = Color3.fromRGB(220, 220, 180)
+minutesLabel.TextSize = 16
+minutesLabel.Parent = timeFrame
+
+-- Nút điều khiển
+local controlFrame = Instance.new("Frame")
+controlFrame.Size = UDim2.new(0.9, 0, 0, 120)
+controlFrame.Position = UDim2.new(0.05, 0, 0, 170)
+controlFrame.BackgroundTransparency = 1
+controlFrame.Parent = contentFrame
+
+-- Nút bật/tắt chính
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(1, 0, 0, 50)
+toggleButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Text = "🟢 BẬT ANTI-AFK"
+toggleButton.TextSize = 20
+toggleButton.Font = Enum.Font.SourceSansSemibold
+toggleButton.Parent = controlFrame
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 8)
+toggleCorner.Parent = toggleButton
+
+-- Nút gửi input ngay
+local sendNowButton = Instance.new("TextButton")
+sendNowButton.Size = UDim2.new(1, 0, 0, 40)
+sendNowButton.Position = UDim2.new(0, 0, 0, 60)
+sendNowButton.BackgroundColor3 = Color3.fromRGB(60, 100, 200)
+sendNowButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+sendNowButton.Text = "🔄 Gửi Input Ngay"
+sendNowButton.TextSize = 18
+sendNowButton.Font = Enum.Font.SourceSans
+sendNowButton.Parent = controlFrame
+
+local sendCorner = Instance.new("UICorner")
+sendCorner.CornerRadius = UDim.new(0, 8)
+sendCorner.Parent = sendNowButton
+
+-- Biến hệ thống
+local isEnabled = true
+local lastInputTime = tick()
+local sessionStartTime = tick()
+local totalMinutes = 0
+
+-- Hàm gửi input ẩn (KHÔNG làm nhân vật di chuyển)
+local function sendStealthInput()
+    if not isEnabled then return end
+    
+    -- Gửi phím F24 (phím không dùng)
+    VirtualInput:SendKeyEvent(true, Enum.KeyCode.F24, false, game)
+    task.wait(0.01)
+    VirtualInput:SendKeyEvent(false, Enum.KeyCode.F24, false, game)
+    
+    -- Gửi mouse click ảo
+    VirtualInput:SendMouseButtonEvent(0, 0, 0, true, game, 0)
+    task.wait(0.01)
+    VirtualInput:SendMouseButtonEvent(0, 0, 0, false, game, 0)
+    
+    lastInputTime = tick()
+    
+    -- Cập nhật UI
+    timerLabel.Text = "Next input: 60 giây"
+    timerLabel.TextColor3 = Color3.fromRGB(255, 255, 180)
+    
+    print("[Anti-AFK] Đã gửi input ẩn - " .. os.date("%H:%M:%S"))
+end
+
+-- Hàm định dạng thời gian
+local function formatTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", hours, minutes, secs)
+end
+
+-- Cập nhật UI liên tục
+RunService.Heartbeat:Connect(function(dt)
+    local currentTime = tick()
+    
+    -- Tính thời gian
+    local timeSinceLast = currentTime - lastInputTime
+    local timeUntilNext = math.max(0, 60 - timeSinceLast)
+    local sessionTime = currentTime - sessionStartTime
+    
+    -- Cập nhật phút đã treo (mỗi 6 phút = 1 phút treo)
+    totalMinutes = math.floor(sessionTime / 360)
+    
+    -- Cập nhật các label
+    timerLabel.Text = string.format("Next input: %02d giây", math.floor(timeUntilNext))
+    sessionLabel.Text = "Đã treo: " .. formatTime(sessionTime)
+    minutesLabel.Text = "Tổng phút: " .. totalMinutes
+    
+    -- Đổi màu khi sắp gửi input
+    if timeUntilNext <= 10 then
+        timerLabel.TextColor3 = Color3.fromRGB(255, 150, 100)
+    else
+        timerLabel.TextColor3 = Color3.fromRGB(255, 255, 180)
+    end
+    
+    -- Tự động gửi input mỗi 60 giây
+    if isEnabled and timeSinceLast >= 60 then
+        sendStealthInput()
     end
 end)
 
-print("Anti-AFK đang chạy - Gửi input mỗi 55 giây")
+-- ===== SỰ KIỆN UI =====
+
+-- Mở/đóng menu
+openButton.MouseButton1Click:Connect(function()
+    mainMenu.Visible = not mainMenu.Visible
+    openButton.Visible = not mainMenu.Visible
+end)
+
+closeButton.MouseButton1Click:Connect(function()
+    mainMenu.Visible = false
+    openButton.Visible = true
+end)
+
+-- Bật/tắt anti-AFK
+toggleButton.MouseButton1Click:Connect(function()
+    isEnabled = not isEnabled
+    
+    if isEnabled then
+        toggleButton.BackgroundColor3 = Color3.fromRGB(0, 180, 80)
+        toggleButton.Text = "🟢 BẬT ANTI-AFK"
+        statusLabel.Text = "TRẠNG THÁI: ĐANG HOẠT ĐỘNG"
+        statusLabel.TextColor3 = Color3.fromRGB(100, 255, 100)
+        sendStealthInput() -- Gửi ngay khi bật
+    else
+        toggleButton.BackgroundColor3 = Color3.fromRGB(220, 60, 60)
+        toggleButton.Text = "🔴 TẮT ANTI-AFK"
+        statusLabel.Text = "TRẠNG THÁI: ĐÃ TẮT"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+    end
+end)
+
+-- Gửi input ngay
+sendNowButton.MouseButton1Click:Connect(function()
+    sendStealthInput()
+end)
+
+-- Kéo thả menu
+local dragging = false
+local dragStart, menuStart
+
+titleFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        menuStart = mainMenu.Position
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        mainMenu.Position = UDim2.new(
+            menuStart.X.Scale, 
+            menuStart.X.Offset + delta.X,
+            menuStart.Y.Scale, 
+            menuStart.Y.Offset + delta.Y
+        )
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+    end
+end)
+
+-- Gửi input đầu tiên
+sendStealthInput()
+
+-- Thông báo
+print("╔══════════════════════════════╗")
+print("║     ANTI-AFK MENU LOADED     ║")
+print("╠══════════════════════════════╣")
+print("║ • Click nút ⚙️ để mở menu    ║")
+print("║ • Nhân vật NGỒI YÊN hoàn toàn║")
+print("║ • Gửi input ẩn mỗi 60 giây   ║")
+print("║ • Không di chuyển/không nhảy ║")
+print("╚══════════════════════════════╝")
