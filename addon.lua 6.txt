@@ -1,5 +1,5 @@
 -- Anti-AFK Script with Custom GUI for Roblox
--- Updated: Outer circle size 20, fix lag toggle working properly
+-- Updated: Anti-AFK chính xác (ngăn kick sau 20 phút không hoạt động)
 
 local player = game.Players.LocalPlayer
 local gui = Instance.new("ScreenGui")
@@ -7,10 +7,10 @@ gui.Parent = player:WaitForChild("PlayerGui")
 gui.Name = "AntiAFKGui"
 gui.ResetOnSpawn = false
 
--- Outer Circular Button (to hơn = 20)
+-- Outer Circular Button (size 20)
 local outerButton = Instance.new("ImageButton")
-outerButton.Size = UDim2.new(0, 20, 0, 20)  -- Size 20
-outerButton.Position = UDim2.new(0.5, -10, 0.5, -10)  -- Center
+outerButton.Size = UDim2.new(0, 20, 0, 20)
+outerButton.Position = UDim2.new(0.5, -10, 0.5, -10)
 outerButton.BackgroundColor3 = Color3.fromRGB(200, 200, 255)
 outerButton.BackgroundTransparency = 0.4
 outerButton.BorderSizePixel = 0
@@ -18,10 +18,10 @@ outerButton.AutoButtonColor = false
 outerButton.Parent = gui
 
 local outerCorner = Instance.new("UICorner")
-outerCorner.CornerRadius = UDim.new(1, 0)  -- tròn hoàn toàn
+outerCorner.CornerRadius = UDim.new(1, 0)
 outerCorner.Parent = outerButton
 
--- Inner Menu (Frame vuông bo góc)
+-- Inner Menu
 local innerMenu = Instance.new("Frame")
 innerMenu.Size = UDim2.new(0, 220, 0, 320)
 innerMenu.Position = UDim2.new(0.5, -110, 0.5, -160)
@@ -38,13 +38,13 @@ innerCorner.Parent = innerMenu
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, 0, 0, 50)
 titleLabel.BackgroundTransparency = 1
-titleLabel.Text = "treo tiền cái 🦋🫙🐿️"
+titleLabel.Text = "Anti-AFK System 🦋🫙🐿️"
 titleLabel.TextColor3 = Color3.fromRGB(220, 220, 255)
 titleLabel.TextSize = 22
 titleLabel.Font = Enum.Font.SourceSansBold
 titleLabel.Parent = innerMenu
 
--- Countdown Frame
+-- Countdown Frame (đếm ngược 20 phút)
 local countdownFrame = Instance.new("Frame")
 countdownFrame.Size = UDim2.new(0.8, 0, 0, 45)
 countdownFrame.Position = UDim2.new(0.1, 0, 0.18, 0)
@@ -60,41 +60,56 @@ countdownLabel.Size = UDim2.new(1, 0, 1, 0)
 countdownLabel.BackgroundTransparency = 1
 countdownLabel.TextColor3 = Color3.fromRGB(255, 240, 180)
 countdownLabel.TextSize = 24
-countdownLabel.Text = "380"
+countdownLabel.Text = "20:00"
 countdownLabel.Parent = countdownFrame
 
--- Minutes Frame
-local minutesFrame = Instance.new("Frame")
-minutesFrame.Size = UDim2.new(0.8, 0, 0, 35)
-minutesFrame.Position = UDim2.new(0.1, 0, 0.32, 0)
-minutesFrame.BackgroundColor3 = Color3.fromRGB(120, 120, 150)
-minutesFrame.Parent = innerMenu
+-- Session Timer
+local sessionFrame = Instance.new("Frame")
+sessionFrame.Size = UDim2.new(0.8, 0, 0, 35)
+sessionFrame.Position = UDim2.new(0.1, 0, 0.32, 0)
+sessionFrame.BackgroundColor3 = Color3.fromRGB(120, 120, 150)
+sessionFrame.Parent = innerMenu
 
-local minLabel = Instance.new("TextLabel")
-minLabel.Size = UDim2.new(1, 0, 1, 0)
-minLabel.BackgroundTransparency = 1
-minLabel.TextColor3 = Color3.fromRGB(255, 255, 200)
-minLabel.TextSize = 20
-minLabel.Text = "Phút treo: 0"
-minLabel.Parent = minutesFrame
+local sessionLabel = Instance.new("TextLabel")
+sessionLabel.Size = UDim2.new(1, 0, 1, 0)
+sessionLabel.BackgroundTransparency = 1
+sessionLabel.TextColor3 = Color3.fromRGB(255, 255, 200)
+sessionLabel.TextSize = 20
+sessionLabel.Text = "Phiên: 00:00:00"
+sessionLabel.Parent = sessionFrame
 
--- FPS Label
-local fpsLabel = Instance.new("TextLabel")
-fpsLabel.Size = UDim2.new(1, 0, 0, 30)
-fpsLabel.Position = UDim2.new(0, 0, 0.42, 0)
-fpsLabel.BackgroundTransparency = 1
-fpsLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
-fpsLabel.TextSize = 18
-fpsLabel.Text = "FPS: Calculating..."
-fpsLabel.Parent = innerMenu
+-- Status Label
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, 0, 0, 30)
+statusLabel.Position = UDim2.new(0, 0, 0.42, 0)
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+statusLabel.TextSize = 18
+statusLabel.Text = "Trạng thái: Hoạt động ✓"
+statusLabel.Parent = innerMenu
+
+-- Toggle Anti-AFK
+local toggleFrame = Instance.new("TextButton")
+toggleFrame.Size = UDim2.new(0.8, 0, 0, 40)
+toggleFrame.Position = UDim2.new(0.1, 0, 0.52, 0)
+toggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80) -- Xanh = bật
+toggleFrame.TextColor3 = Color3.fromRGB(0, 0, 0)
+toggleFrame.Text = "Anti-AFK: Bật"
+toggleFrame.TextSize = 20
+toggleFrame.Font = Enum.Font.SourceSansSemibold
+toggleFrame.Parent = innerMenu
+
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0, 10)
+toggleCorner.Parent = toggleFrame
 
 -- Lag Fix Toggle
-local lagToggleFrame = Instance.new("TextButton")  -- Dùng TextButton để dễ click hơn
+local lagToggleFrame = Instance.new("TextButton")
 lagToggleFrame.Size = UDim2.new(0.8, 0, 0, 40)
-lagToggleFrame.Position = UDim2.new(0.1, 0, 0.52, 0)
-lagToggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80)   -- xanh = off
-lagToggleFrame.TextColor3 = Color3.fromRGB(0, 0, 0)
-lagToggleFrame.Text = "Fix Lag: Off"
+lagToggleFrame.Position = UDim2.new(0.1, 0, 0.65, 0)
+lagToggleFrame.BackgroundColor3 = Color3.fromRGB(90, 90, 120) -- Xám = tắt
+lagToggleFrame.TextColor3 = Color3.fromRGB(255, 255, 255)
+lagToggleFrame.Text = "Fix Lag: Tắt"
 lagToggleFrame.TextSize = 20
 lagToggleFrame.Font = Enum.Font.SourceSansSemibold
 lagToggleFrame.Parent = innerMenu
@@ -103,9 +118,15 @@ local lagCorner = Instance.new("UICorner")
 lagCorner.CornerRadius = UDim.new(0, 10)
 lagCorner.Parent = lagToggleFrame
 
-local lagEnabled = false
+-- Biến
+local antiAFKEnabled = true
+local lagFixEnabled = false
+local lastActivityTime = tick()
+local sessionStartTime = tick()
+local kickTimer = 20 * 60 -- 20 phút = 1200 giây
+local currentTimer = kickTimer
 
--- Lưu setting gốc để reset
+-- Lưu setting gốc
 local originalSettings = {
     QualityLevel = settings().Rendering.QualityLevel,
     Brightness = game.Lighting.Brightness,
@@ -115,7 +136,7 @@ local originalSettings = {
     FOV = workspace.CurrentCamera.FieldOfView,
 }
 
--- Hàm kéo thả (draggable)
+-- Hàm kéo thả
 local function makeDraggable(frame)
     local dragging, dragInput, dragStart, startPos
     
@@ -153,20 +174,37 @@ end
 makeDraggable(outerButton)
 makeDraggable(innerMenu)
 
--- Toggle menu khi bấm vòng tròn ngoài
+-- Toggle menu
 outerButton.MouseButton1Click:Connect(function()
     innerMenu.Visible = not innerMenu.Visible
 end)
 
--- Toggle Fix Lag (sửa lỗi toggle không hoạt động)
-lagToggleFrame.MouseButton1Click:Connect(function()
-    lagEnabled = not lagEnabled
+-- Toggle Anti-AFK
+toggleFrame.MouseButton1Click:Connect(function()
+    antiAFKEnabled = not antiAFKEnabled
     
-    if lagEnabled then
-        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(220, 40, 40)   -- đỏ = on
-        lagToggleFrame.Text = "Fix Lag: On"
+    if antiAFKEnabled then
+        toggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80) -- Xanh = bật
+        toggleFrame.Text = "Anti-AFK: Bật"
+        statusLabel.Text = "Trạng thái: Hoạt động ✓"
+        statusLabel.TextColor3 = Color3.fromRGB(180, 255, 180)
+    else
+        toggleFrame.BackgroundColor3 = Color3.fromRGB(220, 40, 40) -- Đỏ = tắt
+        toggleFrame.Text = "Anti-AFK: Tắt"
+        statusLabel.Text = "Trạng thái: Nguy hiểm ✗"
+        statusLabel.TextColor3 = Color3.fromRGB(255, 120, 120)
+    end
+end)
+
+-- Toggle Fix Lag
+lagToggleFrame.MouseButton1Click:Connect(function()
+    lagFixEnabled = not lagFixEnabled
+    
+    if lagFixEnabled then
+        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(0, 150, 255) -- Xanh dương = bật
+        lagToggleFrame.Text = "Fix Lag: Bật"
         
-        -- Áp dụng fix lag mạnh
+        -- Áp dụng fix lag
         settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
         game.Lighting.Brightness = 1
         game.Lighting.GlobalShadows = false
@@ -174,15 +212,14 @@ lagToggleFrame.MouseButton1Click:Connect(function()
         game.Lighting.FogEnd = math.huge
         workspace.CurrentCamera.FieldOfView = 55
         
-        -- Tắt particle, trail, beam...
         for _, v in ipairs(workspace:GetDescendants()) do
             if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
                 v.Enabled = false
             end
         end
     else
-        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(0, 200, 80)   -- xanh = off
-        lagToggleFrame.Text = "Fix Lag: Off"
+        lagToggleFrame.BackgroundColor3 = Color3.fromRGB(90, 90, 120) -- Xám = tắt
+        lagToggleFrame.Text = "Fix Lag: Tắt"
         
         -- Reset về gốc
         settings().Rendering.QualityLevel = originalSettings.QualityLevel
@@ -192,7 +229,6 @@ lagToggleFrame.MouseButton1Click:Connect(function()
         game.Lighting.FogEnd = originalSettings.FogEnd
         workspace.CurrentCamera.FieldOfView = originalSettings.FOV
         
-        -- Bật lại effect
         for _, v in ipairs(workspace:GetDescendants()) do
             if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
                 v.Enabled = true
@@ -201,35 +237,143 @@ lagToggleFrame.MouseButton1Click:Connect(function()
     end
 end)
 
--- Timer + FPS
-local countdown = 380
-local totalMinutes = 0
+-- Hàm format thời gian
+local function formatTime(seconds)
+    local minutes = math.floor(seconds / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d", minutes, secs)
+end
 
+local function formatSessionTime(seconds)
+    local hours = math.floor(seconds / 3600)
+    local minutes = math.floor((seconds % 3600) / 60)
+    local secs = math.floor(seconds % 60)
+    return string.format("%02d:%02d:%02d", hours, minutes, secs)
+end
+
+-- Hàm phát hiện hoạt động người dùng
+local function simulateActivity()
+    if not antiAFKEnabled then return end
+    
+    -- Reset timer khi có hoạt động
+    currentTimer = kickTimer
+    lastActivityTime = tick()
+    
+    -- Thực hiện hành động chống AFK
+    if player.Character and player.Character:FindFirstChild("Humanoid") then
+        local hum = player.Character.Humanoid
+        
+        -- Di chuyển nhẹ
+        local moveDirection = Vector3.new(
+            math.random(-1, 1) * 0.5,
+            0,
+            math.random(-1, 1) * 0.5
+        )
+        
+        -- Chỉ di chuyển nếu không đang ngồi hoặc nằm
+        if hum.Sit == false and hum.PlatformStand == false then
+            hum:Move(moveDirection, true)
+        end
+        
+        -- Nhảy ngẫu nhiên (30% cơ hội)
+        if math.random(1, 100) <= 30 then
+            hum.Jump = true
+        end
+        
+        -- Xoay camera nhẹ
+        local cam = workspace.CurrentCamera
+        if cam then
+            cam.CFrame = cam.CFrame * CFrame.Angles(
+                0,
+                math.rad(math.random(-5, 5)) * 0.1,
+                0
+            )
+        end
+    end
+    
+    -- Gửi input ảo
+    game:GetService("VirtualInputManager"):SendKeyEvent(
+        true,
+        Enum.KeyCode.Space,
+        false,
+        game
+    )
+    task.wait(0.05)
+    game:GetService("VirtualInputManager"):SendKeyEvent(
+        false,
+        Enum.KeyCode.Space,
+        false,
+        game
+    )
+end
+
+-- Timer chính
 game:GetService("RunService").Heartbeat:Connect(function(dt)
-    local fps = math.floor(1 / dt + 0.5)
-    fpsLabel.Text = "FPS: " .. fps
+    -- Cập nhật session timer
+    local sessionElapsed = tick() - sessionStartTime
+    sessionLabel.Text = "Phiên: " .. formatSessionTime(sessionElapsed)
     
-    countdown = countdown - dt
-    countdownLabel.Text = math.floor(countdown)
-    
-    if countdown <= 0 then
-        countdown = 380
-        totalMinutes = totalMinutes + 6  -- 380 giây ≈ 6 phút 20 giây → cộng 6 phút
-        minLabel.Text = "Phút treo: " .. totalMinutes
+    -- Xử lý anti-AFK timer
+    if antiAFKEnabled then
+        currentTimer = currentTimer - dt
+        
+        -- Kiểm tra nếu sắp hết thời gian (dưới 1 phút)
+        if currentTimer <= 60 then
+            countdownLabel.TextColor3 = Color3.fromRGB(255, 100, 100)
+            statusLabel.Text = "Chuẩn bị hoạt động..."
+            statusLabel.TextColor3 = Color3.fromRGB(255, 200, 100)
+        else
+            countdownLabel.TextColor3 = Color3.fromRGB(255, 240, 180)
+        end
+        
+        -- Cập nhật countdown
+        countdownLabel.Text = formatTime(currentTimer)
+        
+        -- Tự động kích hoạt hoạt động khi còn 30 giây
+        if currentTimer <= 30 then
+            simulateActivity()
+        end
+        
+        -- Hoạt động định kỳ mỗi 2-4 phút
+        local timeSinceLastActivity = tick() - lastActivityTime
+        if timeSinceLastActivity >= math.random(120, 240) then -- 2-4 phút
+            simulateActivity()
+        end
+    else
+        countdownLabel.Text = "--:--"
+        countdownLabel.TextColor3 = Color3.fromRGB(150, 150, 150)
     end
 end)
 
--- Anti-AFK đơn giản
+-- Hoạt động ngẫu nhiên mạnh hơn mỗi 5-8 phút
 spawn(function()
     while true do
-        task.wait(math.random(12, 35))
-        if player.Character and player.Character:FindFirstChild("Humanoid") then
+        task.wait(math.random(300, 480)) -- 5-8 phút
+        
+        if antiAFKEnabled and player.Character and player.Character:FindFirstChild("Humanoid") then
             local hum = player.Character.Humanoid
-            hum:Move(Vector3.new(math.random(-1,1)*0.8, 0, math.random(-1,1)*0.8))
-            task.wait(0.08)
-            hum.Jump = true
+            
+            -- Hoạt động mạnh hơn
+            for i = 1, 3 do
+                hum:Move(Vector3.new(
+                    math.random(-1, 1) * 0.8,
+                    0,
+                    math.random(-1, 1) * 0.8
+                ), true)
+                task.wait(0.1)
+                hum.Jump = true
+                task.wait(0.1)
+            end
         end
     end
 end)
 
-print("Anti-AFK Menu Loaded - Circle size 20 & Lag Fix fixed!")
+-- Kết nối sự kiện người dùng thật
+game:GetService("UserInputService").InputBegan:Connect(function()
+    lastActivityTime = tick()
+    if antiAFKEnabled then
+        currentTimer = kickTimer
+    end
+end)
+
+print("Anti-AFK System Loaded - Chống kick sau 20 phút không hoạt động!")
