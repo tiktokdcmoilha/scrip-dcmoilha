@@ -1,258 +1,198 @@
---// TREO TIEN VUI VE - AUTO REJOIN + TELE NGOI LAI
---// Anti AFK cao cap | Treo dem | Fix nga
+--[[
+📦 PRIME VIP – AFK + FPS BOOST UI (NEW DESIGN)
 
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local VirtualUser = game:GetService("VirtualUser")
-local CAS = game:GetService("ContextActionService")
-local UIS = game:GetService("UserInputService")
-local TeleportService = game:GetService("TeleportService")
-local HttpService = game:GetService("HttpService")
+✨ TÍNH NĂNG:
++ Auto AFK tránh kick
++ Hiển thị FPS + thời gian AFK
++ FPS Boost (giảm lag)
++ Ẩn/hiện UI bằng [V] (PC) hoặc nút 👁️ (Mobile)
++ Prime Vip Header màu xanh lá
++ UI đẹp, bo góc, kéo thả
+]]
 
-local player = Players.LocalPlayer
+--== Dịch vụ ==--
+local plr = game:GetService("Players").LocalPlayer
 local cam = workspace.CurrentCamera
+local vu = game:GetService("VirtualUser")
+local rs = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
 
-------------------------------------------------
--- LUU VI TRI + GHE
-------------------------------------------------
-local savedData = {
-	cframe = nil,
-	seatName = nil
-}
+--== GUI Gốc ==--
+local gui = Instance.new("ScreenGui")
+gui.Name = "GiaBaoUI"
+gui.Parent = plr:WaitForChild("PlayerGui")
 
-local function savePosition()
-	if player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-		savedData.cframe = player.Character.HumanoidRootPart.CFrame
-	end
+-- Nút 👁️ (Mobile)
+local toggleButton = Instance.new("ImageButton", gui)
+toggleButton.Size = UDim2.new(0, 40, 0, 40)
+toggleButton.Position = UDim2.new(1, -50, 1, -50)
+toggleButton.Image = "rbxassetid://128157792135430"
+toggleButton.BackgroundTransparency = 1
 
-	if player.Character and player.Character:FindFirstChild("Humanoid") then
-		local hum = player.Character.Humanoid
-		if hum.SeatPart then
-			savedData.seatName = hum.SeatPart.Name
-		end
-	end
-
-	if writefile then
-		writefile("treotien_save.json", HttpService:JSONEncode(savedData))
-	end
-end
-
--- Lưu mỗi 10s (treo đêm)
-task.spawn(function()
-	while true do
-		task.wait(10)
-		savePosition()
-	end
+-- Chống kick AFK
+plr.Idled:Connect(function()
+	vu:Button2Down(Vector2.new(), cam.CFrame)
+	wait(0.5)
+	vu:Button2Up(Vector2.new(), cam.CFrame)
 end)
 
-------------------------------------------------
--- AUTO REJOIN KHI DISCONNECT
-------------------------------------------------
-game:GetService("GuiService").ErrorMessageChanged:Connect(function()
-	if writefile then
-		writefile("rejoin.flag", "true")
-	end
-	task.wait(2)
-	TeleportService:Teleport(game.PlaceId, player)
-end)
+--== Khung chính ==--
+local f = Instance.new("Frame", gui)
+f.Size = UDim2.new(0, 120, 0, 120)
+f.Position = UDim2.new(0, 40, 0, 40)
+f.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+f.Active = true f.Draggable = true
+Instance.new("UICorner", f).CornerRadius = UDim.new(0, 12)
+Instance.new("UIStroke", f).Color = Color3.fromRGB(60, 200, 100)
 
-------------------------------------------------
--- KHI VO LAI GAME
-------------------------------------------------
-player.CharacterAdded:Connect(function(char)
-	task.wait(3)
+--== Header Prime Vip ==--
+local header = Instance.new("TextLabel", f)
+header.Size = UDim2.new(1, -30, 0, 30)
+header.Position = UDim2.new(0, 5, 0, 5)
+header.Text = "GIA BAO🗣️"
+header.Font = Enum.Font.GothamBlack
+header.TextScaled = true
+header.BackgroundTransparency = 1
+header.TextColor3 = Color3.fromRGB(80, 255, 100)
+header.TextStrokeTransparency = 0.3
 
-	if readfile and isfile and isfile("treotien_save.json") then
-		local data = HttpService:JSONDecode(readfile("treotien_save.json"))
+local close = Instance.new("TextButton", f)
+close.Size = UDim2.new(0, 28, 0, 28)
+close.Position = UDim2.new(1, -35, 0, 5)
+close.Text = "✕"
+close.TextScaled = true
+close.BackgroundColor3 = Color3.fromRGB(200,60,60)
+close.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", close)
+close.MouseButton1Click:Connect(function() f:Destroy() end)
 
-		if char:FindFirstChild("HumanoidRootPart") and data.cframe then
-			char.HumanoidRootPart.CFrame = data.cframe
-		end
-
-		if data.seatName then
-			for _,v in pairs(workspace:GetDescendants()) do
-				if v:IsA("Seat") or v:IsA("VehicleSeat") then
-					if v.Name == data.seatName then
-						task.wait(1)
-						char:MoveTo(v.Position)
-						task.wait(0.5)
-						v:Sit(char:FindFirstChild("Humanoid"))
-						break
-					end
-				end
-			end
-		end
-	end
-end)
-
-------------------------------------------------
--- ANTI AFK CAO CAP
-------------------------------------------------
-player.Idled:Connect(function()
-	VirtualUser:Button2Down(Vector2.new(0,0), cam.CFrame)
-	task.wait(0.5)
-	VirtualUser:Button2Up(Vector2.new(0,0), cam.CFrame)
-end)
-
-task.spawn(function()
-	while true do
-		task.wait(30)
-		cam.CFrame = cam.CFrame * CFrame.Angles(0, math.rad(1), 0)
-	end
-end)
-
-------------------------------------------------
--- KHOA DI CHUYEN (KHONG NGA)
-------------------------------------------------
-local function blockAction()
-	return Enum.ContextActionResult.Sink
-end
-
-CAS:BindAction(
-	"BlockMove",
-	blockAction,
-	false,
-	Enum.PlayerActions.CharacterForward,
-	Enum.PlayerActions.CharacterBackward,
-	Enum.PlayerActions.CharacterLeft,
-	Enum.PlayerActions.CharacterRight,
-	Enum.PlayerActions.CharacterJump
-)
-
-------------------------------------------------
--- GUI
-------------------------------------------------
-local gui = Instance.new("ScreenGui", player.PlayerGui)
-gui.ResetOnSpawn = false
-
--- NUT TRON
-local circle = Instance.new("TextButton", gui)
-circle.Size = UDim2.fromOffset(30,30)
-circle.Position = UDim2.fromScale(0.05,0.5)
-circle.Text = "⚙️"
-circle.TextScaled = true
-circle.BackgroundColor3 = Color3.fromRGB(45,45,45)
-Instance.new("UICorner", circle).CornerRadius = UDim.new(1,0)
-
--- MENU CHINH
-local main = Instance.new("Frame", gui)
-main.Size = UDim2.fromOffset(350,330)
-main.Position = UDim2.fromScale(0.35,0.3)
-main.BackgroundColor3 = Color3.fromRGB(25,25,25)
-main.Visible = false
-Instance.new("UICorner", main).CornerRadius = UDim.new(0,18)
-
-------------------------------------------------
--- KÉO UI
-------------------------------------------------
-local function drag(obj)
-	local dragging, startPos, startInput
-	obj.InputBegan:Connect(function(i)
-		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			startPos = obj.Position
-			startInput = i.Position
-		end
-	end)
-	obj.InputEnded:Connect(function()
-		dragging = false
-	end)
-	UIS.InputChanged:Connect(function(i)
-		if dragging and (i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch) then
-			local delta = i.Position - startInput
-			obj.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end)
-end
-
-drag(circle)
-drag(main)
-
-circle.MouseButton1Click:Connect(function()
-	main.Visible = not main.Visible
-end)
-
-------------------------------------------------
--- TIEU DE
-------------------------------------------------
-local title = Instance.new("TextLabel", main)
-title.Size = UDim2.new(1,0,0,40)
-title.Text = "🪝🦋 Treo Tiền Vui Vẻ"
-title.TextScaled = true
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundTransparency = 1
-
-------------------------------------------------
--- TIMER TREO
-------------------------------------------------
-local countdown = 380
-local totalMinutes = 0
-
-local timer = Instance.new("TextLabel", main)
-timer.Position = UDim2.fromOffset(20,60)
-timer.Size = UDim2.fromOffset(300,30)
-timer.TextScaled = true
+--== Thông tin ==--
+local timer = Instance.new("TextLabel", f)
+timer.Position = UDim2.new(0, 10, 0, 45)
+timer.Size = UDim2.new(1, -20, 0, 28)
+timer.Text = "AFK: 320s"
+timer.BackgroundColor3 = Color3.fromRGB(43,40,50)
 timer.TextColor3 = Color3.new(1,1,1)
-timer.BackgroundTransparency = 1
+timer.Font = Enum.Font.GothamBold
+timer.TextScaled = true
+Instance.new("UICorner", timer)
 
-local minute = Instance.new("TextLabel", main)
-minute.Position = UDim2.fromOffset(20,100)
-minute.Size = UDim2.fromOffset(300,30)
-minute.TextScaled = true
-minute.TextColor3 = Color3.fromRGB(0,255,120)
-minute.BackgroundTransparency = 1
+local totalTime = Instance.new("TextLabel", f)
+totalTime.Position = UDim2.new(0, 10, 0, 80)
+totalTime.Size = UDim2.new(1, -20, 0, 25)
+totalTime.Text = "🕒 Tổng thời gian LỌ: 0 phút"
+totalTime.BackgroundTransparency = 1
+totalTime.TextColor3 = Color3.fromRGB(200, 200, 200)
+totalTime.Font = Enum.Font.GothamSemibold
+totalTime.TextScaled = true
 
-------------------------------------------------
--- FPS
-------------------------------------------------
-local fpsLabel = Instance.new("TextLabel", main)
-fpsLabel.Position = UDim2.fromOffset(20,140)
-fpsLabel.Size = UDim2.fromOffset(300,30)
-fpsLabel.TextScaled = true
-fpsLabel.TextColor3 = Color3.fromRGB(255,255,0)
-fpsLabel.BackgroundTransparency = 1
+local fps = Instance.new("TextLabel", f)
+fps.Position = UDim2.new(0, 10, 0, 110)
+fps.Size = UDim2.new(1, -20, 0, 28)
+fps.Text = "FPS: 0"
+fps.BackgroundColor3 = Color3.fromRGB(40,40,45)
+fps.TextColor3 = Color3.fromRGB(100,255,100)
+fps.Font = Enum.Font.GothamBold
+fps.TextScaled = true
+Instance.new("UICorner", fps)
 
-RunService.RenderStepped:Connect(function(dt)
-	fpsLabel.Text = "FPS: "..math.floor(1/dt)
+--== Nút FPS Boost ==--
+local toggle = Instance.new("TextButton", f)
+toggle.Position = UDim2.new(0, 10, 0, 145)
+toggle.Size = UDim2.new(1, -20, 0, 30)
+toggle.Text = "🟢 Bật FPS Boost"
+toggle.BackgroundColor3 = Color3.fromRGB(50,120,50)
+toggle.Font = Enum.Font.GothamBold
+toggle.TextScaled = true
+toggle.TextColor3 = Color3.new(1,1,1)
+Instance.new("UICorner", toggle)
+
+-- Ghi chú
+local note = Instance.new("TextLabel", f)
+note.Position = UDim2.new(0, 10, 0, 185)
+note.Size = UDim2.new(1, -20, 0, 40)
+note.Text = " Chúc mọi người lọ vui vẻ🎊"
+note.TextColor3 = Color3.fromRGB(180, 180, 180)
+note.BackgroundTransparency = 1
+note.Font = Enum.Font.GothamSemibold
+note.TextScaled = true
+note.TextWrapped = true
+
+--== FPS Counter ==--
+local count, last = 0, tick()
+rs.RenderStepped:Connect(function()
+	count += 1
+	if tick() - last >= 1 then
+		fps.Text = "FPS: " .. count
+		count = 0
+		last = tick()
+	end
 end)
 
-------------------------------------------------
--- FIX LAG
-------------------------------------------------
-local fixLag = Instance.new("TextButton", main)
-fixLag.Position = UDim2.fromOffset(75,190)
-fixLag.Size = UDim2.fromOffset(200,40)
-fixLag.Text = "Fix Lag (80%)"
-fixLag.TextScaled = true
-fixLag.BackgroundColor3 = Color3.fromRGB(60,60,60)
-fixLag.TextColor3 = Color3.new(1,1,1)
-Instance.new("UICorner", fixLag)
-
-fixLag.MouseButton1Click:Connect(function()
+--== FPS Boost Functions ==--
+local function boost()
+	local Lighting = game:GetService("Lighting")
 	settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-	for _,v in pairs(workspace:GetDescendants()) do
+	Lighting.GlobalShadows = false
+	Lighting.Brightness = 0
+	Lighting.FogEnd = 1e9
+	for _,v in ipairs(workspace:GetDescendants()) do
+		if v:IsA("Decal") or v:IsA("Texture") or v:IsA("Sound") then pcall(function() v:Destroy() end) end
+		if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then v.Enabled = false end
 		if v:IsA("BasePart") then
-			v.Material = Enum.Material.Plastic
+			v.Material = Enum.Material.SmoothPlastic
+			v.Reflectance = 0
 			v.CastShadow = false
 		end
 	end
+end
+
+local function unboost()
+	local Lighting = game:GetService("Lighting")
+	Lighting.GlobalShadows = true
+	Lighting.Brightness = 2
+	Lighting.FogEnd = 1000
+end
+
+local boosted = false
+toggle.MouseButton1Click:Connect(function()
+	if not boosted then
+		boost()
+		toggle.Text = "🔴 Tắt FPS Boost"
+		toggle.BackgroundColor3 = Color3.fromRGB(150,60,60)
+	else
+		unboost()
+		toggle.Text = "🟢 Bật FPS Boost"
+		toggle.BackgroundColor3 = Color3.fromRGB(50,120,50)
+	end
+	boosted = not boosted
 end)
 
-------------------------------------------------
--- CHAY TREO DEM
-------------------------------------------------
-task.spawn(function()
+--== Toggle UI ==--
+local function toggleUI() f.Visible = not f.Visible end
+toggleButton.MouseButton1Click:Connect(toggleUI)
+uis.InputBegan:Connect(function(input, g)
+	if not g and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Enum.KeyCode.V then
+		toggleUI()
+	end
+end)
+
+--== AFK Timer ==--
+local totalMinutes = 0
+spawn(function()
 	while true do
-		task.wait(1)
-		countdown -= 1
-		if countdown <= 0 then
-			totalMinutes += math.floor(380/60)
-			countdown = 380
+		local t = math.random(280, 320)
+		for i = t, 0, -1 do
+			if f.Visible then
+				timer.Text = "AFK: "..i.."s"
+				totalTime.Text = "🕒 Tổng thời gian Lọ: " .. tostring(totalMinutes) .. " phút"
+			end
+			wait(1)
 		end
-		timer.Text = "⏳ Còn lại: "..countdown.." giây"
-		minute.Text = "🕒 Phút treo: "..totalMinutes
+		totalMinutes += math.floor(t / 60)
+		cam.CFrame *= CFrame.Angles(0, math.rad(math.random(3, 6)), 0)
+		vu:Button2Down(Vector2.new(), cam.CFrame)
+		wait(math.random(0.4, 0.8))
+		vu:Button2Up(Vector2.new(), cam.CFrame)
 	end
 end)
